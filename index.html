@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahoot Simplificado</title>
+</head>
+<body>
+
+<div id="quiz">
+    <h1 id="question">Pregunta</h1>
+    <ul id="choices">
+        <li><button onclick="checkAnswer(0)">Opción 1</button></li>
+        <li><button onclick="checkAnswer(1)">Opción 2</button></li>
+        <li><button onclick="checkAnswer(2)">Opción 3</button></li>
+        <li><button onclick="checkAnswer(3)">Opción 4</button></li>
+    </ul>
+</div>
+
+<div id="result" style="display: none;">
+    <h2>Resultados</h2>
+    <p id="score"></p>
+</div>
+
+<script>
+const ws = new WebSocket('ws://localhost:8080');
+
+ws.onopen = function() {
+  console.log('Conexión establecida');
+};
+
+ws.onmessage = function(event) {
+  console.log('Mensaje recibido: ', event.data);
+  // Aquí puedes manejar el mensaje recibido del servidor
+};
+
+const questions = [
+    {
+        question: "¿Cuál es la capital de Francia?",
+        choices: ["Madrid", "Londres", "París", "Berlín"],
+        correctAnswer: 2
+    },
+    {
+        question: "¿Cuál es el río más largo del mundo?",
+        choices: ["Amazonas", "Nilo", "Yangtsé", "Misisipi"],
+        correctAnswer: 0
+    },
+    {
+        question: "¿Cuál es el planeta más grande del sistema solar?",
+        choices: ["Tierra", "Marte", "Júpiter", "Saturno"],
+        correctAnswer: 2
+    }
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+// Función para mostrar la pregunta actual y las opciones
+function showQuestion() {
+    const questionElement = document.getElementById("question");
+    const choicesElement = document.getElementById("choices");
+    const current = questions[currentQuestion];
+    
+    questionElement.textContent = current.question;
+    choicesElement.innerHTML = "";
+
+    current.choices.forEach((choice, index) => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.textContent = choice;
+        button.setAttribute("onclick", `checkAnswer(${index})`);
+        li.appendChild(button);
+        choicesElement.appendChild(li);
+    });
+}
+
+// Función para verificar la respuesta seleccionada
+function checkAnswer(index) {
+    if (index === questions[currentQuestion].correctAnswer) {
+        score++;
+    }
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
+}
+
+// Función para mostrar el resultado final
+function showResult() {
+    const quizElement = document.getElementById("quiz");
+    const resultElement = document.getElementById("result");
+    const scoreElement = document.getElementById("score");
+    
+    quizElement.style.display = "none";
+    resultElement.style.display = "block";
+    scoreElement.textContent = `Puntuación: ${score}/${questions.length}`;
+}
+
+// Iniciamos el juego mostrando la primera pregunta
+showQuestion();
+
+</script>
+
+</body>
+</html>
