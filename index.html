@@ -7,7 +7,12 @@
 </head>
 <body>
 
-<div id="quiz">
+<div id="start">
+    <input type="text" id="playerName" placeholder="Ingrese su nombre">
+    <button onclick="startGame()">Comenzar Juego</button>
+</div>
+
+<div id="quiz" style="display: none;">
     <h1 id="question">Pregunta</h1>
     <ul id="choices">
         <li><button onclick="checkAnswer(0)">Opción 1</button></li>
@@ -19,21 +24,34 @@
 
 <div id="result" style="display: none;">
     <h2>Resultados</h2>
-    <p id="score"></p>
+    <ul id="scoreList"></ul>
 </div>
 
-<script>
-const ws = new WebSocket('ws://localhost:8080');
+<!-- Firebase -->
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_86yZc6JnOskxNUEiYC5TBESdMrdwnFs",
+      authDomain: "testapp-8140c.firebaseapp.com",
+      projectId: "testapp-8140c",
+      storageBucket: "testapp-8140c.appspot.com",
+      messagingSenderId: "482798053001",
+      appId: "1:482798053001:web:4c7efa309d02b439af4858"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
 
-ws.onopen = function() {
-  console.log('Conexión establecida');
-};
 
-ws.onmessage = function(event) {
-  console.log('Mensaje recibido: ', event.data);
-  // Aquí puedes manejar el mensaje recibido del servidor
-};
+  const database = firebase.database();
+  const scoresRef = database.ref('scores');
 
+  // Your existing JavaScript code goes here...
 const questions = [
     {
         question: "¿Cuál es la capital de Francia?",
@@ -53,9 +71,14 @@ const questions = [
 ];
 
 let currentQuestion = 0;
-let score = 0;
 
-// Función para mostrar la pregunta actual y las opciones
+function startGame() {
+    playerName = document.getElementById("playerName").value;
+    document.getElementById("start").style.display = "none";
+    document.getElementById("quiz").style.display = "block";
+    showQuestion();
+}
+
 function showQuestion() {
     const questionElement = document.getElementById("question");
     const choicesElement = document.getElementById("choices");
@@ -74,7 +97,6 @@ function showQuestion() {
     });
 }
 
-// Función para verificar la respuesta seleccionada
 function checkAnswer(index) {
     if (index === questions[currentQuestion].correctAnswer) {
         score++;
@@ -89,21 +111,28 @@ function checkAnswer(index) {
     }
 }
 
-// Función para mostrar el resultado final
 function showResult() {
     const quizElement = document.getElementById("quiz");
     const resultElement = document.getElementById("result");
-    const scoreElement = document.getElementById("score");
+    const scoreListElement = document.getElementById("scoreList");
     
     quizElement.style.display = "none";
     resultElement.style.display = "block";
-    scoreElement.textContent = `Puntuación: ${score}/${questions.length}`;
-}
 
-// Iniciamos el juego mostrando la primera pregunta
-showQuestion();
-
+    // Guardar el puntaje en Firebase
+    scoresRef.push({ playerName: playerName, score: score });
+    
+    // Mostrar los resultados guardados en Firebase
+    scoresRef.once('value', function(snapshot) {
+      scoreListElement.innerHTML = "";
+      snapshot.forEach(function(childSnapshot) {
+        const entry = childSnapshot.val();
+        const li = document.createElement("li");
+        li.textContent = `${entry.playerName}: ${entry.score}`;
+        scoreListElement.appendChild(li);
+      });
+    });
+  }
 </script>
-
 </body>
 </html>
